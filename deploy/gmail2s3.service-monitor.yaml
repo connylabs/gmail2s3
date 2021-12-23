@@ -1,0 +1,13 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gmail2s3
+  labels:
+    app.kubernetes.io/name: gmail2s3
+spec:
+  endpoints:
+  - interval: 15s
+    port: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gmail2s3

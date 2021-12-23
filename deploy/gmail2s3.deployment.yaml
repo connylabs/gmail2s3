@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gmail2s3
+  labels:
+    app.kubernetes.io/name: gmail2s3
+spec:
+  template:
+    spec:
+      containers:
+      - image: img.conny.dev/connylabs/gmail2s3
+        name: gmail2s3
+        command:
+          - gunicorn
+        args:
+          - 'gmail2s3.main:app'
+          - -b
+          - ':8080'
+          - --timeout
+          - '120'
+          - -w
+          - '4'
+          - -c
+          - conf/gunicorn.py
+        workingDir: /app
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        volumeMounts:
+          - name: config
+            mountPath: /app/current-config.yaml
+            subPath: config.yaml
+        env:
+          - name: GMAIL2S3_CONF_FILE
+            value: /app/current-config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: gmail2s3-config

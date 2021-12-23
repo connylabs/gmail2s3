@@ -1,0 +1,20 @@
+default_context:
+  full_name: CONNY GmbH
+  email: dev@conny.de
+  github_username: connylabs
+  project_name: Gmail2S3
+  project_slug: gmail2s3
+  package_name: gmail2s3
+  varEnvPrefix: GMAIL2S3
+  baseclass: Gmail2S3
+  project_repo: connylabs/gmail2s3
+  git: https://github.com/connylabs/gmail2s3
+  project_short_description: Store all incoming emails of Google Mail account to S3, including attachments
+  pypi_username: connylabs
+  version: 0.0.1
+  docker_registry: img.conny.dev/connylabs/gmail2s3
+  use_pytest: y
+  create_author_file: n
+  coveralls_token: ''
+  open_source_license: Apache Software License 2.0
+  _template: python-fastapi-template

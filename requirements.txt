@@ -1,0 +1,14 @@
+click
+fastapi[all]
+pydantic
+PyYAML
+requests
+starlette
+uvicorn
+uvloop
+aiohttp
+async-timeout
+starlette_exporter
+paramiko
+sentry-sdk
+gunicorn>=0.19

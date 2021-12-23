@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  config.yaml: |
+    gmail2s3:
+      token: changeme
+      debug: false
+      download_dir: /tmp/gmail2s3
+      env: development
+      url: https://gmail2s3.yourdomain.com
+    sentry:
+      url: null
+      environment: development
+kind: ConfigMap
+metadata:
+  name: gmail2s3-config

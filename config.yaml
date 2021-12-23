@@ -1,0 +1,9 @@
+gmail2s3:
+  token: changeme
+  debug: false
+  download_dir: /tmp/gmail2s3
+  env: development
+  url: https://gmail2s3.yourdomain.com
+sentry:
+  url: null
+  environment: development

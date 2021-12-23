@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gmail2s3
+  labels:
+    app.kubernetes.io/name: gmail2s3
+spec:
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 8080
+    name: http
+  selector:
+    app.kubernetes.io/name: gmail2s3
