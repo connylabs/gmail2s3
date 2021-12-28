@@ -4,7 +4,7 @@ from gmail2s3.commands.command_base import CommandBase
 
 class OpenapiCmd(CommandBase):
     name = "openapi"
-    help_message = "show openapis"
+    help_message = "Generate openapis schema"
     output_default = "yaml"
 
     def __init__(self, options):

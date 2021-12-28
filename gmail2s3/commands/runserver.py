@@ -5,7 +5,7 @@ from gmail2s3.commands.command_base import CommandBase
 
 class RunServerCmd(CommandBase):
     name = "run-server"
-    help_message = "Run the registry server (with gunicorn)"
+    help_message = "Run the API server (with uvicorn)"
     parse_unknown = False
 
     def __init__(self, options, unknown=None):
