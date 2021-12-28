@@ -49,7 +49,7 @@ def getenv(name, default=None, convert=str):
 
 
 def envbool(value: str):
-    return value and (value.lower() in ("1", "true"))
+    return value and (value.lower() in ("1", "true", "True", "yes"))
 
 
 APP_ENVIRON = getenv("APP_ENV", "development")
@@ -69,7 +69,7 @@ GMAIL2S3_TOKEN = os.getenv(
 GMAIL2S3_TMP_DIR = os.getenv("GMAIL2S3_TMP_DIR", "/tmp/gmail2s3")
 GMAIL2S3_SENTRY_URL = os.getenv("GMAIL2S3_SENTRY_URL", None)
 GMAIL2S3_SENTRY_ENV = os.getenv("GMAIL2S3_SENTRY_ENV", "development")
-
+GMAIL2S3_DEBUG = getenv("GMAIL2S3_DEBUG", False, envbool)
 PROMETHEUS_MULTIPROC_DIR = os.getenv(
     "PROMETHEUS_MULTIPROC_DIR", os.path.join(GMAIL2S3_TMP_DIR, "prometheus")
 )
@@ -84,7 +84,7 @@ class Gmail2S3Config:
     def __init__(self, defaults=None, confpath=None):
         self.settings = {
             "gmail2s3": {
-                "debug": False,
+                "debug": GMAIL2S3_DEBUG,
                 "env": APP_ENVIRON,
                 "url": GMAIL2S3_API,
                 "download_dir": GMAIL2S3_DOWNLOAD_DIR,

@@ -7,7 +7,7 @@ import pytest
 import gmail2s3
 
 from fastapi.testclient import TestClient
-from gmail2s3.cli import app
+from gmail2s3.main import app
 
 DEFAULT_PREFIX = "http://localhost:5000"
 
