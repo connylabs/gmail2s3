@@ -4,6 +4,7 @@ import os
 from gmail2s3.commands.runserver import RunServerCmd
 from gmail2s3.commands.version import VersionCmd
 from gmail2s3.commands.openapi import OpenapiCmd
+from gmail2s3.commands.gmailauth import GmailAuthCmd
 
 
 def all_commands():
@@ -11,6 +12,7 @@ def all_commands():
         VersionCmd.name: VersionCmd,
         RunServerCmd.name: RunServerCmd,
         OpenapiCmd.name: OpenapiCmd,
+        GmailAuthCmd.name: GmailAuthCmd,
     }
 
 
