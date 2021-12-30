@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 import os
 import subprocess
 from pathlib import Path
 
 
 def _parse_version():
+    # pylint: disable=no-member
     version_file = list(Path(__file__).resolve().parents[1].glob("VERSION"))
+    # pylint: enable=no-member
     if version_file:
         return version_file[0].read_text().strip()
     return "0.0.1"

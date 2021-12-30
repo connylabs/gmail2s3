@@ -1,9 +1,9 @@
 click
-fastapi[all]
+fastapi[all]>=0.70.1
 pydantic
 PyYAML
 requests
-starlette
+starlette>=0.17.1
 uvicorn
 uvloop
 aiohttp
@@ -12,3 +12,7 @@ starlette_exporter
 paramiko
 sentry-sdk
 gunicorn>=0.19
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+simplegmail

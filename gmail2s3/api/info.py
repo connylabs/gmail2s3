@@ -29,7 +29,7 @@ async def gen_error():
 
 @router.get("/error_uncatched", tags=["debug"])
 async def gen_error_uncatch():
-    raise Exception()
+    return 1 / 0
 
 
 @router.get("/slow", tags=["debug"])
