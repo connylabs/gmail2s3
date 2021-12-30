@@ -24,7 +24,7 @@ def logfile_path(jsonfmt=False, debug=False):
     if debug or os.getenv("DEBUGLOG", "false").lower() == "true":
         _debug = "_debug"
 
-    return os.path.join(GMAIL2S3_CONF_DIR, "logging%s%s.conf" % (_debug, _json))
+    return os.path.join(GMAIL2S3_CONF_DIR, f"logging{_debug}{_json}.conf")
 
 
 def getenv(name, default=None, convert=str):

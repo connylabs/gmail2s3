@@ -68,13 +68,15 @@ class TestServer:
         assert res.status_code == 200
         assert self.json(res) == {"version": gmail2s3.__version__}
 
-    def test_version(self, client):
+    @pytest.mark.asyncio
+    async def test_version(self, client):
         url = self._url_for("")
         res = self.Client(client, self.headers()).get(url)
         assert res.status_code == 200
         assert self.json(res) == {"version": gmail2s3.__version__}
 
-    def test_error(self, client):
+    @pytest.mark.asyncio
+    async def test_error(self, client):
         url = self._url_for("/error")
         res = self.Client(client, self.headers()).get(url)
         assert res.status_code == 403
@@ -84,7 +86,8 @@ class TestServer:
         res = self.Client(client, self.headers()).get(url)
         assert res.status_code == 404
 
-    def test_500(self, client):
+    @pytest.mark.asyncio
+    async def test_500(self, client):
         url = self._url_for("/error_uncatched")
 
         res = self.Client(client, self.headers()).get(url)
@@ -101,35 +104,35 @@ class TestServer:
 BaseTestServer = TestServer
 
 
-@pytest.mark.usefixtures("live_server")
-class LiveTestServer(BaseTestServer):
-    class Client(object):
-        def __init__(self, client, headers):
-            self.client = requests
-            self.headers = headers
+# @pytest.mark.usefixtures("live_server")
+# class LiveTestServer(BaseTestServer):
+#     class Client(object):
+#         def __init__(self, client, headers):
+#             self.client = requests
+#             self.headers = headers
 
-        def _request(self, method, path, params, body):
-            return getattr(self.client, method)(
-                path, params=params, data=json.dumps(body), headers=self.headers
-            )
+#         def _request(self, method, path, params, body):
+#             return getattr(self.client, method)(
+#                 path, params=params, data=json.dumps(body), headers=self.headers
+#             )
 
-        def get(self, path, params=None, body=None):
-            return self._request("get", path, params, body)
+#         def get(self, path, params=None, body=None):
+#             return self._request("get", path, params, body)
 
-        def delete(self, path, params=None, body=None):
-            return self._request("delete", path, params, body)
+#         def delete(self, path, params=None, body=None):
+#             return self._request("delete", path, params, body)
 
-        def post(self, path, params=None, body=None):
-            return self._request("post", path, params, body)
+#         def post(self, path, params=None, body=None):
+#             return self._request("post", path, params, body)
 
-    def content(self, res):
-        return res.content
+#     def content(self, res):
+#         return res.content
 
-    def _url_for(self, path):
-        return request.url_root + self.api_prefix + path
+#     def _url_for(self, path):
+#         return request.url_root + self.api_prefix + path
 
-    def json(self, res):
-        return res.json()
+#     def json(self, res):
+#         return res.json()
 
 
 def get_server_class():

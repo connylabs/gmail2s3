@@ -26,7 +26,7 @@ class LoadVariables(argparse.Action):
             for cvar in var.split(","):
                 split_var = re.match("(.+?)=(.+)", cvar)
                 if split_var is None:
-                    raise ValueError("Malformed variable: %s" % cvar) from exc
+                    raise ValueError(f"Malformed variable: {cvar}") from exc
                 key, value = split_var.group(1), split_var.group(2)
                 res[key] = value
         return res
@@ -38,7 +38,7 @@ class LoadVariables(argparse.Action):
             if ext == ".json":
                 return json.loads(ofile.read())
             raise ValueError(
-                "File extension is not in [yaml, json, jsonnet]: %s" % filename
+                f"File extension is not in [yaml, json, jsonnet]: {filename}"
             )
 
     def load_variables(self, var):

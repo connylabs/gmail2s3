@@ -20,7 +20,7 @@ def _json_default(obj):
     if isinstance(obj, (datetime.date, datetime.time, datetime.datetime)):
         return obj.isoformat()
     if isinstance(obj, Exception):
-        return "Exception: %s" % str(obj)
+        return "Exception: {obj!r}"
 
     return str(obj)
 

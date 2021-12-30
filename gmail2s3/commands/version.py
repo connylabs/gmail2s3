@@ -50,7 +50,7 @@ class VersionCmd(CommandBase):
     def _render_console(self):
         return "\n".join(
             [
-                "Api-version: %s" % self.api_version,
-                "Client-version: %s" % self.client_version,
+                f"Api-version: {self.api_version}",
+                f"Client-version: {self.client_version}",
             ]
         )

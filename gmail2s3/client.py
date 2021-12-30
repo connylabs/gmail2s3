@@ -17,7 +17,7 @@ class Gmail2S3Client:
         self.host = self.endpoint.geturl()
         self._headers = {
             "Content-Type": "application/json",
-            "User-Agent": "gmail2s3py-cli/%s" % gmail2s3.__version__,
+            "User-Agent": f"gmail2s3py-cli/{gmail2s3.__version__}",
         }
 
         if "GMAIL2S3_CA_BUNDLES" in os.environ:
