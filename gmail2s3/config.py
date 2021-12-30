@@ -93,6 +93,10 @@ class Gmail2S3Config:
                 "tmp_dir": GMAIL2S3_TMP_DIR,
                 "prometheus_dir": PROMETHEUS_MULTIPROC_DIR,
             },
+            "gmail": {
+                "client_secret": None,
+                "gmail_token": None,
+            },
             "sentry": {
                 "url": GMAIL2S3_SENTRY_URL,
                 "environment": GMAIL2S3_SENTRY_ENV,
@@ -108,6 +112,10 @@ class Gmail2S3Config:
     @property
     def gmail2s3(self):
         return self.settings["gmail2s3"]
+
+    @property
+    def gmail(self):
+        return self.settings["gmail"]
 
     @property
     def sentry(self):
