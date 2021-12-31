@@ -71,6 +71,13 @@ GMAIL2S3_SENTRY_URL = os.getenv("GMAIL2S3_SENTRY_URL", None)
 GMAIL2S3_SENTRY_ENV = os.getenv("GMAIL2S3_SENTRY_ENV", "development")
 GMAIL2S3_DEBUG = getenv("GMAIL2S3_DEBUG", False, envbool)
 
+GMAIL2S3_S3_ENDPOINT = os.getenv("GMAIL2S3_S3_ENDPOINT", None)
+GMAIL2S3_S3_ACCESS_KEY = os.getenv("GMAIL2S3_S3_ACCESS_KEY", None)
+GMAIL2S3_S3_SECRET_KEY = os.getenv("GMAIL2S3_S3_SECRET_KEY", None)
+GMAIL2S3_S3_REGION = os.getenv("GMAIL2S3_S3_REGION", None)
+GMAIL2S3_S3_PREFIX = os.getenv("GMAIL2S3_S3_PREFIX", None)
+GMAIL2S3_S3_BUCKET = os.getenv("GMAIL2S3_S3_BUCKET", None)
+
 PROMETHEUS_MULTIPROC_DIR = os.getenv(
     "PROMETHEUS_MULTIPROC_DIR", os.path.join(GMAIL2S3_TMP_DIR, "prometheus")
 )
@@ -93,6 +100,14 @@ class Gmail2S3Config:
                 "tmp_dir": GMAIL2S3_TMP_DIR,
                 "prometheus_dir": PROMETHEUS_MULTIPROC_DIR,
             },
+            "s3": {
+                "endpoint": GMAIL2S3_S3_ENDPOINT,
+                "access_key": GMAIL2S3_S3_ACCESS_KEY,
+                "secret_key": GMAIL2S3_S3_SECRET_KEY,
+                "region": GMAIL2S3_S3_REGION,
+                "prefix": GMAIL2S3_S3_PREFIX,
+                "bucket": GMAIL2S3_S3_BUCKET,
+            },
             "gmail": {
                 "client_secret": None,
                 "gmail_token": None,
@@ -112,6 +127,10 @@ class Gmail2S3Config:
     @property
     def gmail2s3(self):
         return self.settings["gmail2s3"]
+
+    @property
+    def s3(self):
+        return self.settings["s3"]
 
     @property
     def gmail(self):

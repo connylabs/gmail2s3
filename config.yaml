@@ -4,11 +4,21 @@ gmail2s3:
   download_dir: /tmp/gmail2s3
   env: development
   url: https://gmail2s3.yourdomain.com
+
 gmail:
   client_secret: None
   gmail_token: None
   in_labels: ['Fax-giro']
   out_labels: ['gmail2s3']
+
+s3:
+  endpoint: null
+  access_key: 'YOUR-ACCESSKEYID'
+  secret_key: 'YOUR-SECRETACCESSKEY'
+  region: 'eu-central-1'
+  prefix: null
+  bucket: 'gmail2s3-dev'
+
 sentry:
   url: null
   environment: development
