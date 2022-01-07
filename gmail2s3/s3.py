@@ -18,17 +18,19 @@ class S3Client:
         kwargs["config"] = Config(signature_version="s3v4")
         return kwargs
 
-    def __init__(self, options: dict, bucket: str, prefix: str=''):
+    def __init__(self, options: dict, bucket: str, prefix: str = ""):
         self.options: dict = options
         kwargs: dict = self._boto_args(options)
         self.client = boto3.resource("s3", **kwargs)
         self.bucket: str = bucket
         self.prefix: str = prefix
 
-    def buildpath(self, filename: str, dest: str=''):
+    def buildpath(self, filename: str, dest: str = ""):
         if not dest:
             dest = PurePath(filename).name
-        return f"{self.prefix}dest"
+        return f"{self.prefix}{dest}"
 
-    def upload_file(self, filepath: str, dest: str=''):
-        s3.Bucket(self.bucket).upload_file(filepath, self.buildpath(filepath, dest))
+    def upload_file(self, filepath: str, dest: str = ""):
+        self.client.Bucket(self.bucket).upload_file(
+            filepath, self.buildpath(filepath, dest)
+        )

@@ -1,9 +1,9 @@
 import os
 import logging
+
 from urllib.parse import urlparse, ParseResult
 
 import requests
-
 
 import gmail2s3
 
@@ -30,7 +30,7 @@ class Gmail2S3Client:
 
     @property
     def headers(self) -> dict:
-        token: str = ''
+        token: str = ""
         headers: dict = {}
         headers.update(self._headers)
         if token:
