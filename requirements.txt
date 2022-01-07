@@ -1,4 +1,4 @@
-fastapi[all]>=0.70.1
+# fastapi[all]>=0.70.1
 pydantic
 PyYAML
 requests
@@ -14,5 +14,8 @@ gunicorn>=0.19
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-simplegmail
+https://codeload.github.com/ant31/simplegmail/zip/refs/heads/master#egg=simplegmail
+
 boto3
+# Celery
+# celery[librabbitmq,sqlalchemy,redis]
