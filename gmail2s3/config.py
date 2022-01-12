@@ -111,6 +111,8 @@ class Gmail2S3Config:
             "gmail": {
                 "client_secret": None,
                 "gmail_token": None,
+                "in_labels": [],
+                "out_labels": [],
             },
             "sentry": {
                 "url": GMAIL2S3_SENTRY_URL,

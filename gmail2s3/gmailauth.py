@@ -1,29 +1,95 @@
 import json
 import pathlib
+import logging
 from pathlib import PurePath
 
 from datetime import datetime
-from typing import Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Optional, Union, Literal
 
 from pydantic import BaseModel, Field
 from simplegmail import Gmail
 from simplegmail.message import Message
+from simplegmail.attachment import Attachment
 from simplegmail.query import construct_query
 
 from gmail2s3.config import GCONFIG
-from gmail2s3.s3 import S3Client
+from gmail2s3.s3 import S3Client, S3Dest
+from gmail2s3.client import Gmail2S3Client
+
+
+logger = logging.getLogger(__name__)
 
 
 class MessageQuery(BaseModel):
-    startDate: datetime
-    endDate: datetime
-    labels: List[str]
+    after: Optional[datetime]
+    before: Optional[datetime]
+    labels: Optional[List[str]]
+    exclude_labels: Optional[List[str]]
 
 
 class MessageList(BaseModel):
-    messageIds: List[str]
-    userId: str = Field(...)
-    query: MessageQuery
+    message_refs: List[Dict]
+    query: Optional[MessageQuery]
+
+
+class WebHookPayload(BaseModel):
+    message_ref: dict
+    attachments: List[dict]
+    s3_uploads: List[dict]
+
+
+class WebHookBody(BaseModel):
+    event: Literal["uploaded_attachment", "synced_email"]
+    payload: WebHookPayload
+    params: Optional[dict]
+
+
+class WebHook(BaseModel):
+    endpoint: str
+    params: Optional[dict] = Field({})
+    event: Literal["uploaded_attachment", "synced_email"]
+    token: Optional[str] = Field("")
+    headers: Optional[dict] = Field({})
+    verify_ssl: Optional[bool] = Field(True)
+
+    def trigger_event(
+        self, message_ref: dict, attachments: List[Attachment], s3_dests: List[S3Dest]
+    ):
+        client = Gmail2S3Client(
+            webh.endpoint,
+            token=webh.token,
+            headers=webh.headers,
+            requests_verify=webh.verify_ssl,
+        )
+
+        if self.event == "uploaded_attachment":
+            body = WebHookBody(
+                event="upload_attachment",
+                payload=WebHookPayload(
+                    message_ref=message_ref,
+                    attachments=[attachments[0].dict()],
+                    s3_uploads=[s3_dests[0].dict()],
+                ),
+                params=self.params,
+            )
+
+        elif self.event == "synced_email":
+            body = WebHookBody(
+                event=synced_email,
+                payload=WebHookPayload(
+                    message_ref=message_ref,
+                    attachments=[x.dict() for x in attachments],
+                    s3_uploads=[x.dict() for x in s3_dest],
+                ),
+                params=self.params,
+            )
+        else:
+            raise ValueError(f"unknown event: {self.event}")
+
+        logger.info(f"trigger webhook: {body}")
+        resp = self._client.post(webh.endpoint, body=body.json())
+        resp.raise_for_status()
+        return resp.status_code
 
 
 class GmailClient:
@@ -69,26 +135,24 @@ class GmailClient:
         return self._client
 
     # YYYY-MM-DD[*HH[:MM[:SS[.fff[fff]]]][+HH:MM[:SS[.ffffff]]]]
-    def list_emails(
-        self,
-        after: str = "",
-        before: str = "",
-        labels: List[List[str]] = [],
-        exclude_labels: List[List[str]] = [],
-    ) -> MessageList:
-
+    def list_emails(self, message_query: MessageQuery) -> MessageList:
         query_params = {}
-        if labels:
-            query_params["labels"] = labels
-        if exclude_labels:
-            query_params["exclude_labels"] = exclude_labels
-        if after:
-            query_params["after"] = datetime.fromisoformat(after).strftime("%s")
-        if before:
-            query_params["before"] = datetime.fromisoformat(before).strftime("%s")
+        if message_query.labels:
+            query_params["labels"] = message_query.labels
+        if message_query.exclude_labels:
+            query_params["exclude_labels"] = message_query.exclude_labels
+        if message_query.after:
+            query_params["after"] = datetime.fromisoformat(
+                message_query.after
+            ).strftime("%s")
+        if message_query.before:
+            query_params["before"] = datetime.fromisoformat(
+                message_query.before
+            ).strftime("%s")
 
         query = construct_query(query_params)
         messages = self.client.get_messages(query=query, refs_only=True)
+        MessageList(message_refs=messages, query=message_query)
         return messages
 
     def pipeline(self):
@@ -121,7 +185,7 @@ class GmailClient:
                 f"{attach.filename}",
             )
             attach.save(str(fpath), overwrite)
-            paths.append(str(fpath))
+            paths.append((str(fpath), attach))
         return paths
 
     def dump_message(self, message: Message):
@@ -134,30 +198,52 @@ class GmailClient:
         return message.add_labels(labels)
 
 
+def _webhooks_dict(webhooks: List[WebHook]) -> dict[str, WebHook]:
+    res = {}
+    for webh in webhook:
+        res[webh.event] = webh
+    return res
+
+
 def gmail2s3(
-    s3: dict = GCONFIG.s3,
-    after: str = "2022-01-01",
-    before: str = "",
-    labels: List[List[str]] = GCONFIG.gmail["in_labels"],
-    exclude_labels: List[List[str]] = GCONFIG.gmail["out_labels"],
-):
-    # s3_label_id = 'Label_4009252254966186696'
-    s3 = S3Client(s3, bucket=s3["bucket"], prefix=s3["prefix"])
+    message_query: MessageQuery, webhooks: List[WebHook] = [], s3conf: dict = GCONFIG.s3
+) -> List[dict]:
+    s3 = S3Client(s3conf, bucket=s3conf["bucket"], prefix=s3conf["prefix"])
     gmail = GmailClient()
     message_refs = gmail.list_emails(after, before, labels, exclude_labels)
     total = len(message_refs)
     i = 0
+    webhooks_h = _webhooks_dict(webhooks)
+    synced_emails = []
     for message_ref in message_refs:
         i += 1
-        print(f"{message_ref}")
-        print(f"synced: {i}/{total}")
+        logger.info(f"{message_ref}")
+        logger.info(f"synced: {i}/{total}")
         message = gmail.get_email(message_ref)
-        print(message.date)
         attachements = gmail.download_attachements(message)
-        for fpath in attachements:
-            s3.upload_file(fpath, str(PurePath(fpath).relative_to(gmail.dest_dir)))
-            gmail.add_labels(message, [gmail.client.get_label_id("s3")])
+        s3_dests = []
+        for att in attachements:
+            fpath, attach = att
+            s3_dest = s3.upload_file(
+                fpath, str(PurePath(fpath).relative_to(gmail.dest_dir))
+            )
+            s3_dests.append(s3_dest)
+            for webh in webhooks_h["upload_attachment"]:
+                webh.trigger_event(
+                    message_ref, attachments=[attach], s3_dests=[s3_dest]
+                )
+
         raw_message_path = gmail.dump_message(message)
-        s3.upload_file(
+        email_s3_path = s3.upload_file(
             str(raw_message_path), str(raw_message_path.relative_to(gmail.dest_dir))
         )
+        s3_dests.append(email_s3_path)
+        for webh in webhooks_h["synced_email"]:
+            webh.trigger_event(
+                message_ref,
+                attachments=[att[1] for att in attachments],
+                s3_dests=s3_dests,
+            )
+        gmail.add_labels(message, [gmail.client.get_label_id("s3")])
+        synced_emails.append({"message_id": message_ref["id"], "s3_paths": s3_dests})
+    return synced_emails
