@@ -1,6 +1,6 @@
 import logging
 import json
-from typing import Optional
+from typing import Mapping
 from urllib.parse import urlparse, ParseResult, urlencode
 
 import requests
@@ -18,7 +18,7 @@ class Gmail2S3Client:
         endpoint: str = DEFAULT_SERVER,
         token: str = "",
         requests_verify: bool = True,
-        headers: Optional[dict] = None,
+        headers: Mapping | None = None,
     ):
         self.endpoint: ParseResult = self._configure_endpoint(endpoint)
         self.host: str = self.endpoint.geturl()
@@ -51,7 +51,7 @@ class Gmail2S3Client:
         resp.raise_for_status()
         return resp.json()
 
-    def _request(self, method, path, params: Optional[dict] = None, body: str = "{}"):
+    def _request(self, method, path, params: dict | None = None, body: str = "{}"):
         if params:
             path = path + "?" + urlencode(params)
         return getattr(requests, method)(

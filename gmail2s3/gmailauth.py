@@ -3,7 +3,7 @@ import logging
 from pathlib import PurePath
 from enum import Enum
 from datetime import datetime, date
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, Field
 from simplegmail import Gmail
@@ -26,36 +26,36 @@ class WebHookType(str, Enum):
 
 
 class MessageQuery(BaseModel):
-    after: Optional[Union[date, datetime]]
-    before: Optional[Union[date, datetime]]
-    labels: Optional[List[str]]
-    exclude_labels: Optional[List[str]]
+    after: date | datetime | None = Field(None)
+    before: date | datetime | None = Field(None)
+    labels: List[str] = Field([])
+    exclude_labels: List[str] = Field([])
 
 
 class MessageList(BaseModel):
-    message_refs: List[Dict]
-    query: Optional[MessageQuery]
+    message_refs: List[Dict] = Field("...")
+    query: MessageQuery | None = Field(None)
 
 
 class WebHookPayload(BaseModel):
-    message_ref: dict
-    attachments: List[dict]
-    s3_uploads: List[dict]
+    message_ref: dict = Field("...")
+    attachments: List[dict] = Field([])
+    s3_uploads: List[dict] = Field([])
 
 
 class WebHookBody(BaseModel):
-    event: WebHookType
-    payload: WebHookPayload
-    params: Optional[dict] = None
+    event: WebHookType = Field("...")
+    payload: WebHookPayload = Field("...")
+    params: dict = Field({})
 
 
 class WebHook(BaseModel):
-    endpoint: str
-    params: Optional[dict] = Field({})
-    event: WebHookType
-    token: Optional[str] = Field("")
-    headers: Optional[dict] = Field({})
-    verify_ssl: Optional[bool] = Field(True)
+    endpoint: str = Field("...")
+    params: dict = Field({})
+    event: WebHookType = Field("...")
+    token: str = Field("")
+    headers: dict = Field({})
+    verify_ssl: bool = Field(True)
 
     def trigger_event(
         self, message_ref: dict, attachments: List[Attachment], s3_dests: List[S3Dest]
@@ -154,8 +154,7 @@ class GmailClient:
 
         query = construct_query(query_params)
         messages = self.client.get_messages(query=query, refs_only=True)
-        MessageList(message_refs=messages, query=message_query)
-        return messages
+        return MessageList(message_refs=messages, query=message_query)
 
     def get_email(self, message_ref: dict):
         message = self.client.get_message_from_ref(ref=message_ref)
@@ -181,7 +180,8 @@ class GmailClient:
         fpath = PurePath().joinpath(
             self.dest_dir, self._message_storage_path(message), f"{message.id}.json"
         )
-        return message.dump(fpath)
+        message.dump(str(fpath))
+        return fpath
 
     def add_labels(self, message: Message, labels: List[str]):
         return message.add_labels(labels)
@@ -197,14 +197,16 @@ class Gmail2S3:
 
         self.gmail = GmailClient()
         self.webhooks = self._webhooks_dict(webhooks)
-        if s3conf is None:
+        if not s3conf:
             s3conf = GCONFIG.s3
         self.s3 = S3Client(s3conf, bucket=s3conf["bucket"], prefix=s3conf["prefix"])
         self.message_query = message_query
 
     @classmethod
-    def _webhooks_dict(cls, webhooks: List[WebHook]) -> dict[str, WebHook]:
-        res = {
+    def _webhooks_dict(
+        cls, webhooks: List[WebHook] | None
+    ) -> dict[WebHookType, List[WebHook]]:
+        res: dict[WebHookType, List[WebHook]] = {
             WebHookType.UPLOADED_ATTACHMENT: [],
             WebHookType.SYNCED_EMAIL: [],
             WebHookType.SYNC_COMPLETED: [],
@@ -260,12 +262,12 @@ class Gmail2S3:
         return (message_ref, s3_dests)
 
     def sync_emails(self, flag_label: str = "s3") -> List[dict]:
-        message_refs = self.gmail.list_emails(self.message_query)
-        total = len(message_refs)
+        message_list = self.gmail.list_emails(self.message_query)
+        total = len(message_list.message_refs)
         i = 0
         synced_emails = []
 
-        for message_ref in message_refs:
+        for message_ref in message_list.message_refs:
             i += 1
             logger.info("%s", message_ref)
             logger.info("synced: %s/%s", i, total)

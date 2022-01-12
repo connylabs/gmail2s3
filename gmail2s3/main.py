@@ -63,14 +63,14 @@ app.add_route("/metrics", handle_metrics)
 
 def exception_handler(exc: Exception, message: str, status: int, request: Request):
     logger.error(exc)
-    logger.error("".join(traceback.format_exception(exc)))
+    logger.error("".join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
     request_dict = {
         "url": str(request.url),
         "method": request.method,
         "headers": dict(request.headers.items()),
         "params": dict(request.query_params),
     }
-    logger.error("".join(traceback.format_exception(exc)))
+
     return JSONResponse(
         content={
             "message": message,
