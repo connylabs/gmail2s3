@@ -3,7 +3,7 @@
 # pylint: disable=too-few-public-methods
 import logging
 from copy import deepcopy
-from typing import Tuple, List, Optional
+from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from gmail2s3.gmailauth import (
@@ -21,38 +21,45 @@ logger = logging.getLogger(__name__)
 
 
 class SyncedEmail(BaseModel):
-    message_id: str
-    s3_paths: Optional[List[str]]
+    message_id: str = Field("...")
+    s3_paths: List = Field([], description="List of path in the S3 bucket")
 
 
 class SyncedEmailList(BaseModel):
-    synced_emails: List[SyncedEmail]
+    synced_emails: List[SyncedEmail] = Field("...")
+    total: int = Field("...", description="Total number of emails synced to S3")
 
 
 class S3Conf(BaseModel):
-    bucket: Optional[str]
-    prefix: Optional[str]
+    bucket: str | None = Field(None)
+    prefix: str | None = Field(None)
+
+
+class CopyS3Resp(BaseModel):
+    source: S3Dest = Field("...")
+    dest: S3Dest = Field("...")
 
 
 class SyncedEmailRequest(BaseModel):
-    query: Optional[MessageQuery] = Field(MessageQuery())
-    webhooks: Optional[List[WebHook]] = Field([])
-    s3conf: Optional[S3Conf] = Field({})
+    query: MessageQuery = Field(MessageQuery())
+    webhooks: List[WebHook] = Field([])
+    s3conf: S3Conf = Field({})
 
 
-@router.post("/sync_emails", response_model=list[dict])
-async def sync_emails(req: SyncedEmailRequest) -> list[dict]:
+@router.post("/sync_emails", response_model=SyncedEmailList)
+async def sync_emails(req: SyncedEmailRequest) -> SyncedEmailList:
     s3conf = deepcopy(GCONFIG.s3)
     if req.s3conf:
-        s3conf.update(req.s3conf)
+        s3conf.update(req.s3conf.dict(exclude_none=True))
     gmailsyncer = Gmail2S3(
         message_query=req.query, webhooks=req.webhooks, s3conf=s3conf
     )
-    gmailsyncer.sync_emails()
+    resp = gmailsyncer.sync_emails()
+    return SyncedEmailList(synced_emails=resp, total=len(resp))
 
 
-@router.post("/webhooks/upload_attachment/copy", response_model=Tuple[S3Dest, S3Dest])
-async def copy_s3(webhook: WebHookBody):
+@router.post("/webhooks/upload_attachment/copy", response_model=CopyS3Resp)
+async def copy_s3(webhook: WebHookBody) -> CopyS3Resp:
     s3conf = deepcopy(GCONFIG.s3)
     s3_dest_bucket = webhook.params["s3_copy_dest"]["bucket"]
     s3_dest_prefix = webhook.params["s3_copy_dest"]["prefix"]
@@ -65,4 +72,4 @@ async def copy_s3(webhook: WebHookBody):
         dest_prefix=s3_dest_prefix,
     )
     logger.info(resp)
-    return resp
+    return CopyS3Resp(source=resp[0], dest=resp[1])

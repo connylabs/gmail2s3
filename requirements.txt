@@ -1,5 +1,5 @@
 # fastapi[all]>=0.70.1
-pydantic
+pydantic>=1.9.0
 PyYAML
 requests
 starlette>=0.17.1

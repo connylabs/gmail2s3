@@ -2,12 +2,12 @@ from pathlib import PurePath
 from typing import Tuple
 import boto3
 from botocore.client import Config
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class S3Dest(BaseModel):
-    bucket: str
-    path: str
+    bucket: str = Field("...")
+    path: str = Field("...")
 
 
 class S3Client:
