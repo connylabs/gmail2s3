@@ -3,7 +3,6 @@ from typing import Tuple
 import boto3
 from botocore.client import Config
 from pydantic import BaseModel
-from gmail2s3.config import GCONFIG
 
 
 class S3Dest(BaseModel):

@@ -1,9 +1,7 @@
-import os
 import logging
 import json
-
-import urllib
-from urllib.parse import urlparse, ParseResult
+from typing import Optional
+from urllib.parse import urlparse, ParseResult, urlencode
 
 import requests
 
@@ -20,7 +18,7 @@ class Gmail2S3Client:
         endpoint: str = DEFAULT_SERVER,
         token: str = "",
         requests_verify: bool = True,
-        headers: dict = {},
+        headers: Optional[dict] = None,
     ):
         self.endpoint: ParseResult = self._configure_endpoint(endpoint)
         self.host: str = self.endpoint.geturl()
@@ -29,7 +27,8 @@ class Gmail2S3Client:
             "Content-Type": "application/json",
             "User-Agent": f"gmail2s3py-cli/{gmail2s3.__version__}",
         }
-        self._headers.update(headers)
+        if headers:
+            self._headers.update(headers)
         self.verify = requests_verify
 
     def _url(self, path: str) -> str:
@@ -42,9 +41,8 @@ class Gmail2S3Client:
     def headers(self) -> dict:
         headers: dict = {}
         headers.update(self._headers)
-        print(headers)
         if self.token:
-            headers["Authorization"] = token
+            headers["Authorization"] = self.token
         return headers
 
     def version(self) -> dict:
@@ -53,9 +51,9 @@ class Gmail2S3Client:
         resp.raise_for_status()
         return resp.json()
 
-    def _request(self, method, path, params: dict = {}, body: str = "{}"):
+    def _request(self, method, path, params: Optional[dict] = None, body: str = "{}"):
         if params:
-            path = path + "?" + urllib.urlencode(params)
+            path = path + "?" + urlencode(params)
         return getattr(requests, method)(
             path,
             data=json.dumps(body),

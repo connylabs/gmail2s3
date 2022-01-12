@@ -8,9 +8,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from gmail2s3.gmailauth import (
     MessageQuery,
-    gmail2s3,
-    MessageList,
-    GmailClient,
+    Gmail2S3,
     WebHook,
     WebHookBody,
 )
@@ -47,7 +45,10 @@ async def sync_emails(req: SyncedEmailRequest) -> list[dict]:
     s3conf = deepcopy(GCONFIG.s3)
     if req.s3conf:
         s3conf.update(req.s3conf)
-    return gmail2s3(message_query=req.query, webhooks=req.webhooks, s3conf=s3conf)
+    gmailsyncer = Gmail2S3(
+        message_query=req.query, webhooks=req.webhooks, s3conf=s3conf
+    )
+    gmailsyncer.sync_emails()
 
 
 @router.post("/webhooks/upload_attachment/copy", response_model=Tuple[S3Dest, S3Dest])
