@@ -1,9 +1,14 @@
 from pathlib import PurePath
-
+from typing import Tuple
 import boto3
 from botocore.client import Config
 
 from gmail2s3.config import GCONFIG
+
+
+class S3Dest(BaseModel):
+    bucket: str
+    path: str
 
 
 class S3Client:
@@ -30,7 +35,27 @@ class S3Client:
             dest = PurePath(filename).name
         return f"{self.prefix}{dest}"
 
-    def upload_file(self, filepath: str, dest: str = ""):
-        self.client.Bucket(self.bucket).upload_file(
-            filepath, self.buildpath(filepath, dest)
+    def upload_file(self, filepath: str, dest: str = "") -> S3Dest:
+        path = self.buildpath(filepath, dest)
+        self.client.Bucket(self.bucket).upload_file(filepath, path)
+        return S3Dest(bucket=self.bucket, path=path)
+
+    def copy_s3_to_s3(
+        self, src_bucket: str, src_path: str, dest_bucket: str, dest_prefix: str = ""
+    ) -> Tuple(S3Dest, S3Dest):
+        copy_source = {
+            "Bucket": src_bucket,
+            "Key": src_path,
+        }
+
+        if not dest_prefix:
+            dest_path = src_path
+        else:
+            dest_path = f"{dest_prefix}{PurePath(src_path).name}"
+
+        self.client.meta.client.copy(copy_source, dest_bucket, dest_path)
+
+        return (
+            S3Dest(bucket=src_bucket, path=src_path),
+            S3Dest(bucket=dest_bucket, path=dest_path),
         )
