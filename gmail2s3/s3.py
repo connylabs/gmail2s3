@@ -2,7 +2,7 @@ from pathlib import PurePath
 from typing import Tuple
 import boto3
 from botocore.client import Config
-
+from pydantic import BaseModel
 from gmail2s3.config import GCONFIG
 
 
@@ -42,7 +42,7 @@ class S3Client:
 
     def copy_s3_to_s3(
         self, src_bucket: str, src_path: str, dest_bucket: str, dest_prefix: str = ""
-    ) -> Tuple(S3Dest, S3Dest):
+    ) -> Tuple[S3Dest, S3Dest]:
         copy_source = {
             "Bucket": src_bucket,
             "Key": src_path,

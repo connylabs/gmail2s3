@@ -42,6 +42,7 @@ class Gmail2S3Client:
     def headers(self) -> dict:
         headers: dict = {}
         headers.update(self._headers)
+        print(headers)
         if self.token:
             headers["Authorization"] = token
         return headers
@@ -55,10 +56,10 @@ class Gmail2S3Client:
     def _request(self, method, path, params: dict = {}, body: str = "{}"):
         if params:
             path = path + "?" + urllib.urlencode(params)
-        return getattr(self.client, method)(
+        return getattr(requests, method)(
             path,
             data=json.dumps(body),
-            headers=headers,
+            headers=self.headers,
         )
 
     def get(self, path, params=None, body=None):
