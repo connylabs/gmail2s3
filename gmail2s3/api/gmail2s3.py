@@ -58,6 +58,18 @@ async def sync_emails(req: SyncedEmailRequest) -> SyncedEmailList:
     return SyncedEmailList(synced_emails=resp, total=len(resp))
 
 
+@router.post("/sync_emails_info", response_model=dict)
+async def sync_emails_info(req: SyncedEmailRequest) -> dict:
+    s3conf = deepcopy(GCONFIG.s3)
+    if req.s3conf:
+        s3conf.update(req.s3conf.dict(exclude_none=True))
+    gmailsyncer = Gmail2S3(
+        message_query=req.query, webhooks=req.webhooks, s3conf=s3conf
+    )
+    resp = gmailsyncer.sync_emails_info()
+    return resp
+
+
 @router.post("/webhooks/upload_attachment/copy", response_model=CopyS3Resp)
 async def copy_s3(webhook: WebHookBody) -> CopyS3Resp:
     s3conf = deepcopy(GCONFIG.s3)

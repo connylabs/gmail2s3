@@ -34,7 +34,7 @@ class LoadVariables(argparse.Action):
     def _load_from_file(self, filename, ext):
         with open(filename, "r", encoding="utf-8") as ofile:
             if ext in [".yml", ".yaml"]:
-                return yaml.load(ofile.read())
+                return yaml.load(ofile.read(), Loader=yaml.SafeLoader)
             if ext == ".json":
                 return json.loads(ofile.read())
             raise ValueError(
