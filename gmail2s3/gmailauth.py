@@ -3,7 +3,7 @@ import logging
 from pathlib import PurePath
 from enum import Enum
 from datetime import datetime, date
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 from pydantic import BaseModel, Field
 from simplegmail import Gmail
@@ -127,7 +127,7 @@ class GmailClient:
         raise NotImplementedError
 
     def auth(self):
-        print(self.client_secret, self.gmail_token)
+        logger.info("%s, %s", self.client_secret, self.gmail_token)
         return Gmail(client_secret_file=self.client_secret, creds_file=self.gmail_token)
 
     @property
@@ -148,11 +148,12 @@ class GmailClient:
         if message_query.exclude_labels:
             query_params["exclude_labels"] = message_query.exclude_labels
         if message_query.after:
-            query_params["after"] = message_query.after.strftime("%")
+            query_params["after"] = message_query.after.strftime("%s")
         if message_query.before:
             query_params["before"] = message_query.before.strftime("%s")
 
         query = construct_query(query_params)
+        logger.info("Params: %s, query: %s", query_params, str(query))
         messages = self.client.get_messages(query=query, refs_only=True)
         return MessageList(message_refs=messages, query=message_query)
 
@@ -260,6 +261,13 @@ class Gmail2S3:
 
         self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
         return (message_ref, s3_dests)
+
+    def sync_emails_info(self) -> dict[str, Any]:
+        message_list = self.gmail.list_emails(self.message_query)
+        return {
+            "total": len(message_list.message_refs),
+            "query": self.message_query.dict(),
+        }
 
     def sync_emails(self, flag_label: str = "s3") -> List[dict]:
         message_list = self.gmail.list_emails(self.message_query)

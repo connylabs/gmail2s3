@@ -4,7 +4,7 @@ from gmail2s3.commands.command_base import CommandBase
 
 class GmailAuthCmd(CommandBase):
     name = "gmail-login"
-    help_message = "Generate gmailAuths schema"
+    help_message = "Start the login flow to generate the offline google API token"
 
     def __init__(self, options):
         super().__init__(options)

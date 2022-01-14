@@ -1,3 +1,4 @@
+import logging
 import argparse
 import os
 
@@ -5,6 +6,7 @@ from gmail2s3.commands.runserver import RunServerCmd
 from gmail2s3.commands.version import VersionCmd
 from gmail2s3.commands.openapi import OpenapiCmd
 from gmail2s3.commands.gmailauth import GmailAuthCmd
+from gmail2s3.commands.gmailsync import GmailSyncCmd
 
 
 def all_commands():
@@ -13,6 +15,7 @@ def all_commands():
         RunServerCmd.name: RunServerCmd,
         OpenapiCmd.name: OpenapiCmd,
         GmailAuthCmd.name: GmailAuthCmd,
+        GmailSyncCmd.name: GmailSyncCmd,
     }
 
 
@@ -37,6 +40,7 @@ def set_cmd_env(env):
 
 
 def cli():
+    logging.basicConfig(level=logging.INFO)
     try:
         parser = get_parser(all_commands())
         unknown = None

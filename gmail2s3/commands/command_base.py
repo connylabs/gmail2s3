@@ -28,9 +28,10 @@ class CommandBase:
             return
         if self.output == "json":
             self._render_json()
-        if self.output == "yaml":
+        elif self.output == "yaml":
             self._render_yaml()
-        print(self._render_console())
+        else:
+            print(self._render_console())
 
     def render_error(self, payload):
         if self.output == "json":
