@@ -1,6 +1,6 @@
 import argparse
 import datetime
-
+from copy import deepcopy
 from gmail2s3.commands.command_base import CommandBase
 from gmail2s3.commands.utils import LoadVariables
 from gmail2s3.gmailauth import (
@@ -26,13 +26,35 @@ class GmailSyncCmd(CommandBase):
             labels=options.labels,
             exclude_labels=options.exclude_labels,
         )
+
         self.conf = options.conf
-        self._result = None
-        self.info = options.info
         GCONFIG.load_conf(self.conf)
+        self.info = options.info
+
+        self.s3conf = deepcopy(GCONFIG.s3)
+        if options.s3_prefix:
+            self.s3conf["prefix"] = options.s3_prefix
+        if options.s3_bucket:
+            self.s3conf["bucket"] = options.s3_bucket
+
+        self._result = None
 
     @classmethod
     def _add_arguments(cls, parser):
+        parser.add_argument(
+            "--s3-prefix",
+            default=None,
+            required=False,
+            type=str,
+        )
+
+        parser.add_argument(
+            "--s3-bucket",
+            default=None,
+            required=False,
+            type=str,
+        )
+
         parser.add_argument(
             "--conf",
             "-c",
@@ -101,7 +123,9 @@ class GmailSyncCmd(CommandBase):
         )
 
     def _call(self):
-        gmailsyncer = Gmail2S3(message_query=self.message_query, webhooks=self.webhooks)
+        gmailsyncer = Gmail2S3(
+            message_query=self.message_query, webhooks=self.webhooks, s3conf=self.s3conf
+        )
         if self.info:
             self._result = gmailsyncer.sync_emails_info()
         else:
