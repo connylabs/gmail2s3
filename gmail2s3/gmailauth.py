@@ -1,5 +1,6 @@
 import pathlib
 import logging
+import time
 from pathlib import PurePath
 from enum import Enum
 from datetime import datetime, date
@@ -30,6 +31,8 @@ class MessageQuery(BaseModel):
     before: date | datetime | None = Field(None)
     labels: List[str] = Field([])
     exclude_labels: List[str] = Field([])
+    sender: List[str] = Field([])
+    to: List[str] = Field([])
 
 
 class MessageList(BaseModel):
@@ -151,6 +154,10 @@ class GmailClient:
             query_params["after"] = message_query.after.strftime("%s")
         if message_query.before:
             query_params["before"] = message_query.before.strftime("%s")
+        if message_query.sender:
+            query_params["sender"] = message_query.sender
+        if message_query.to:
+            query_params["recipient"] = message_query.to
 
         query = construct_query(query_params)
         logger.info("Params: %s, query: %s", query_params, str(query))
@@ -158,7 +165,7 @@ class GmailClient:
         return MessageList(message_refs=messages, query=message_query)
 
     def get_email(self, message_ref: dict):
-        message = self.client.get_message_from_ref(ref=message_ref)
+        message = self.client.get_message_from_ref(ref=message_ref, with_raw=False)
         return message
 
     def _message_storage_path(self, message: Message) -> str:
@@ -258,8 +265,8 @@ class Gmail2S3:
             [att[1] for att in attachments],
             s3_dests,
         )
-
-        self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
+        if flag_label:
+            self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
         return (message_ref, s3_dests)
 
     def sync_emails_info(self) -> dict[str, Any]:
@@ -284,8 +291,19 @@ class Gmail2S3:
                 {"message_id": message_ref["id"], "s3_paths": s3_dests}
             )
 
-        # for webh in self.webhooks[WebHookType.SYNC_COMPLETED]:
-        #     # NotImplementedError
-        #     pass
-
-        return synced_emails
+    def forward_emails(self, sender: str, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = "") -> List[dict]:
+        message_list = self.gmail.list_emails(self.message_query)
+        total = len(message_list.message_refs)
+        i = 0
+        forwarded_emails = []
+        for message_ref in message_list.message_refs:
+            message = self.gmail.get_email(message_ref)
+            self.gmail.client.forward_message(message, sender=sender, to=to, forward_prefix=forward_prefix)
+            i += 1
+            logger.info("%s", message_ref)
+            logger.info("forwarded: %s/%s", i, total)
+            forwarded_emails.append(
+                {"message_id": message_ref["id"], "s3_paths": []}
+            )
+            time.sleep(1)
+        return forwarded_emails

@@ -7,6 +7,7 @@ from gmail2s3.commands.version import VersionCmd
 from gmail2s3.commands.openapi import OpenapiCmd
 from gmail2s3.commands.gmailauth import GmailAuthCmd
 from gmail2s3.commands.gmailsync import GmailSyncCmd
+from gmail2s3.commands.gmailforward import GmailForwardCmd
 
 
 def all_commands():
@@ -16,6 +17,7 @@ def all_commands():
         OpenapiCmd.name: OpenapiCmd,
         GmailAuthCmd.name: GmailAuthCmd,
         GmailSyncCmd.name: GmailSyncCmd,
+        GmailForwardCmd.name: GmailForwardCmd,
     }
 
 
