@@ -1,3 +1,7 @@
+*.json
+.json
+localconfig.yaml
+.python-version
 .git
 !.git/HEAD
 .gitignore
