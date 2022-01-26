@@ -149,7 +149,7 @@ class GmailClient:
         if message_query.labels:
             query_params["labels"] = message_query.labels
         if message_query.exclude_labels:
-            query_params["exclude_labels"] = message_query.exclude_labels
+            query_params["exclude_labels"] = [[x] for x in message_query.exclude_labels]
         if message_query.after:
             query_params["after"] = message_query.after.strftime("%s")
         if message_query.before:
@@ -291,19 +291,21 @@ class Gmail2S3:
                 {"message_id": message_ref["id"], "s3_paths": s3_dests}
             )
 
-    def forward_emails(self, sender: str, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = "") -> List[dict]:
+    def forward_emails(
+        self, sender: str, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
+    ) -> List[dict]:
         message_list = self.gmail.list_emails(self.message_query)
         total = len(message_list.message_refs)
         i = 0
         forwarded_emails = []
         for message_ref in message_list.message_refs:
             message = self.gmail.get_email(message_ref)
-            self.gmail.client.forward_message(message, sender=sender, to=to, forward_prefix=forward_prefix)
+            self.gmail.client.forward_message(
+                message, sender=sender, to=to, forward_prefix=forward_prefix
+            )
             i += 1
             logger.info("%s", message_ref)
             logger.info("forwarded: %s/%s", i, total)
-            forwarded_emails.append(
-                {"message_id": message_ref["id"], "s3_paths": []}
-            )
+            forwarded_emails.append({"message_id": message_ref["id"], "s3_paths": []})
             time.sleep(1)
         return forwarded_emails

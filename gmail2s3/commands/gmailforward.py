@@ -44,21 +44,18 @@ class GmailForwardCmd(CommandBase):
             "--sender",
             required=True,
             type=str,
-            help="Email used in the 'from' statement. Must match the gmail account auth"
+            help="Email used in the 'from' statement. Must match the gmail account auth",
         )
 
         parser.add_argument(
-            "--to",
-            required=True,
-            type=str,
-            help="Address to forward emails to"
+            "--to", required=True, type=str, help="Address to forward emails to"
         )
 
         parser.add_argument(
             "--prefix",
             required=True,
             type=str,
-            help="Add a prefix to the original email subject"
+            help="Add a prefix to the original email subject",
         )
 
         parser.add_argument(
@@ -136,7 +133,9 @@ class GmailForwardCmd(CommandBase):
         if self.info:
             self._result = gmailsyncer.sync_emails_info()
         else:
-            resp = gmailsyncer.forward_emails(to=self.to, sender=self.sender, forward_prefix=self.prefix)
+            resp = gmailsyncer.forward_emails(
+                to=self.to, sender=self.sender, forward_prefix=self.prefix
+            )
             self._result = {"total": len(resp), "forwarded_emails": resp}
 
     def _render_dict(self):
