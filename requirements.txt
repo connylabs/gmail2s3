@@ -15,7 +15,7 @@ google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 https://codeload.github.com/ant31/simplegmail/zip/refs/heads/main#egg=simplegmail
-
 boto3
+
 # Celery
 # celery[librabbitmq,sqlalchemy,redis]

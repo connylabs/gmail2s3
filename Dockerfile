@@ -9,7 +9,6 @@ RUN pip install pip -U
 COPY requirements.txt $workdir
 
 RUN pip install -r requirements.txt -U
-RUN pip install git+https://github.com/ant31/simplegmail.git -U
 RUN apt-get remove --purge -y libffi-dev build-essential libssl-dev git rustc cargo
 RUN rm -rf /root/.cargo
 RUN pip install flask -U
