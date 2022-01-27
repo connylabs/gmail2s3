@@ -3,21 +3,11 @@ stages:
   - build
   - test
   - tag
-  - deploy
-
-include:
-  - project: 'connylegal/mietright_deployments'
-    file: '/.gitlab-ci/build-container.yaml'
-    ref: main
-
-  - project: 'connylegal/mietright_deployments'
-    ref: main
-    file: '/.gitlab-ci/deploy.yaml'
 
 variables:
-  FAILFASTCI_NAMESPACE: connylegal
+  FAILFASTCI_NAMESPACE: connylabs
   OCI_REPO: img.conny.dev
-  CONTAINER: conny/gmail2s3
+  CONTAINER: connylabs/gmail2s3
   IMAGE_NAME: $OCI_REPO/$CONTAINER
   APPNAME: gmail2s3
   APP: gmail2s3
@@ -25,16 +15,39 @@ variables:
   GMAIL2S3_CONF_FILE: tests/data/test_config.yaml
 
 # BUILD IMAGE
-build image:
-  extends: .build-container
+build container:
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - image-cache
+  tags:
+    - connylabs-main
+  stage: build
+  image:
+    name: img.conny.dev/oss/kaniko/executor:debug
+    entrypoint: ['']
   variables:
     TAG: v.$CI_COMMIT_REF_SLUG
+    PROJECT_DIR: $CI_PROJECT_DIR
+    DOCKERFILE: Dockerfile
+  script:
+    - echo $DOCKERFILE
+    - /kaniko/executor --cache=true --cache-dir=image-cache
+                       --context $PROJECT_DIR
+                       --dockerfile $PROJECT_DIR/$DOCKERFILE
+                       --label 'git-branch'=$CI_COMMIT_REF_SLUG
+                       --label 'git-tag=$CI_COMMIT_TAG'
+                       --destination $IMAGE_NAME:$TAG
+                       --registry-mirror img.conny.dev
 
 # RUN TEST
 unit test:
   image:
     name: img.conny.dev/connylabs/gmail2s3:ci.v1
   stage: build
+  before_script:
+    - pip install -r requirements_dev.txt -U
+    - pip install -r requirements.txt -U
   script:
     - pytest --cov=$APP --cov-report=html --cov-report=term-missing  --verbose tests --junitxml=report.xml
     - coverage xml
@@ -44,7 +57,7 @@ unit test:
       junit: report.xml
       cobertura: coverage.xml
   tags:
-    - kubernetes
+    - oss
 
 
 code lint:
@@ -54,14 +67,13 @@ code lint:
   script:
     - make check
   tags:
-    - kubernetes
-
+    - oss
 
 test image:
   image:
     name: $IMAGE_NAME:v.$CI_COMMIT_REF_SLUG
   needs:
-    - "build image"
+    - "build container"
   stage: test
   variables:
     GIT_STRATEGY: none
@@ -71,23 +83,21 @@ test image:
   tags:
     - kubernetes
 
-
-# TAGS IMAGES
-image tag:
-  extends: .tag-main
-  needs:
-    - "test image"
+tag-main:
+  tags:
+    - connylabs-main
+  stage: tag
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "production"'
+    - if: '$CI_COMMIT_TAG'
   variables:
-    SOURCE_TAG: v.$CI_COMMIT_REF_SLUG
-
-# Deploy
-deploy-staging:
-  needs:
-    - image tag
-  extends: .deploy-staging
-
-deploy-production:
-  needs:
-    - image tag
-  extends: .deploy-production
-  stage: deploy
+    SOURCE_TAG: v$CI_COMMIT_REF_SLUG
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: ['']
+  script:
+    - crane cp $IMAGE_NAME:$SOURCE_TAG $IMAGE_NAME:$CI_COMMIT_REF_SLUG
+    - crane cp $IMAGE_NAME:$SOURCE_TAG $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - crane cp $IMAGE_NAME:$SOURCE_TAG $IMAGE_NAME:latest
