@@ -290,6 +290,7 @@ class Gmail2S3:
             synced_emails.append(
                 {"message_id": message_ref["id"], "s3_paths": s3_dests}
             )
+        return synced_emails
 
     def forward_emails(
         self, sender: str, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
