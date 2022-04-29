@@ -11,6 +11,7 @@ from gmail2s3.gmailauth import (
     Gmail2S3,
     WebHook,
     WebHookBody,
+    GmailClient,
 )
 from gmail2s3.s3 import S3Dest, S3Client
 from gmail2s3.config import GCONFIG
@@ -85,3 +86,23 @@ async def copy_s3(webhook: WebHookBody) -> CopyS3Resp:
     )
     logger.info(resp)
     return CopyS3Resp(source=resp[0], dest=resp[1])
+
+
+@router.post("/webhooks/griddle-gmail", response_model=dict)
+async def griddle_email(webhook: WebHookBody) -> dict:
+    griddle_endpoint = webhook.params["email_processor"]["endpoint"]
+    raw_message = webhook.payload.message_raw
+    message = GmailClient().client._build_message_from_raw_json(raw_message)
+    griddle_payload = {
+        "to": message.recipient,
+        "from": message.sender,
+        "cc": message.cc,
+        "bcc": message.bcc,
+        "html": message.html,
+        "text": message.plain,
+        "headers_list": message.headers,
+        "headers": message.text_headers(),
+        "attachments_files": webhook.payload.attachments
+    }
+    logger.info(griddle_payload)
+    return griddle_payload

@@ -42,6 +42,7 @@ class MessageList(BaseModel):
 
 class WebHookPayload(BaseModel):
     message_ref: dict = Field("...")
+    message_raw: dict = Field({})
     attachments: List[dict] = Field([])
     s3_uploads: List[dict] = Field([])
 
@@ -59,9 +60,11 @@ class WebHook(BaseModel):
     token: str = Field("")
     headers: dict = Field({})
     verify_ssl: bool = Field(True)
+    include_message: bool = Field(True)
+    include_attachment_data: bool = Field(False)
 
     def trigger_event(
-        self, message_ref: dict, attachments: List[Attachment], s3_dests: List[S3Dest]
+            self, message_ref: dict, attachments: List[Attachment], s3_dests: List[S3Dest],  message_raw: dict = {}
     ):
         client = Gmail2S3Client(
             self.endpoint,
@@ -71,24 +74,30 @@ class WebHook(BaseModel):
         )
 
         if self.event == WebHookType.UPLOADED_ATTACHMENT:
+            payload = WebHookPayload(
+                message_ref=message_ref,
+                attachments=[attachments[0].dict(with_data=self.include_attachment_data)],
+                s3_uploads=[s3_dests[0].dict()],
+            )
+            if self.include_message:
+                payload.message_raw = message_raw
             body = WebHookBody(
                 event=WebHookType.UPLOADED_ATTACHMENT,
-                payload=WebHookPayload(
-                    message_ref=message_ref,
-                    attachments=[attachments[0].dict()],
-                    s3_uploads=[s3_dests[0].dict()],
-                ),
+                payload=payload,
                 params=self.params,
             )
 
         elif self.event == WebHookType.SYNCED_EMAIL:
+            payload = WebHookPayload(
+                message_ref=message_ref,
+                attachments=[x.dict(with_data=self.include_attachment_data) for x in attachments],
+                s3_uploads=[x.dict() for x in s3_dests],
+            )
+            if self.include_message:
+                payload.message_raw = message_raw
             body = WebHookBody(
                 event=WebHookType.SYNCED_EMAIL,
-                payload=WebHookPayload(
-                    message_ref=message_ref,
-                    attachments=[x.dict() for x in attachments],
-                    s3_uploads=[x.dict() for x in s3_dests],
-                ),
+                payload=payload,
                 params=self.params,
             )
         else:
@@ -226,13 +235,14 @@ class Gmail2S3:
         return res
 
     def trigger_webhooks(
-        self, webhtype: WebHookType, message_ref, attachments, s3_dests
+            self, webhtype: WebHookType, message_ref, attachments, s3_dests, message_raw: dict
     ):
         for webh in self.webhooks[webhtype]:
             webh.trigger_event(
                 message_ref,
                 attachments=attachments,
                 s3_dests=s3_dests,
+                message_raw=message_raw,
             )
 
     def sync_email(
@@ -252,6 +262,7 @@ class Gmail2S3:
                 message_ref,
                 attachments=[attach],
                 s3_dests=[s3_dest],
+                message_raw=message.raw_response,
             )
         raw_message_path = self.gmail.dump_message(message)
         email_s3_path = self.s3.upload_file(
@@ -262,8 +273,9 @@ class Gmail2S3:
         self.trigger_webhooks(
             WebHookType.SYNCED_EMAIL,
             message_ref,
-            [att[1] for att in attachments],
-            s3_dests,
+            attachments=[att[1] for att in attachments],
+            s3_dests=s3_dests,
+            message_raw=message.raw_response
         )
         if flag_label:
             self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
