@@ -164,8 +164,8 @@ class GmailClient:
         messages = self.client.get_messages(query=query, refs_only=True)
         return MessageList(message_refs=messages, query=message_query)
 
-    def get_email(self, message_ref: dict):
-        message = self.client.get_message_from_ref(ref=message_ref, with_raw=False)
+    def get_email(self, message_ref: dict, with_raw: bool = False):
+        message = self.client.get_message_from_ref(ref=message_ref, with_raw=with_raw)
         return message
 
     def _message_storage_path(self, message: Message) -> str:
@@ -293,7 +293,7 @@ class Gmail2S3:
         return synced_emails
 
     def forward_emails(
-        self, sender: str, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
+        self, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
     ) -> List[dict]:
         message_list = self.gmail.list_emails(self.message_query)
         total = len(message_list.message_refs)
@@ -301,6 +301,7 @@ class Gmail2S3:
         forwarded_emails = []
         for message_ref in message_list.message_refs:
             message = self.gmail.get_email(message_ref)
+            sender = message.sender
             self.gmail.client.forward_message(
                 message, sender=sender, to=to, forward_prefix=forward_prefix
             )
@@ -308,5 +309,29 @@ class Gmail2S3:
             logger.info("%s", message_ref)
             logger.info("forwarded: %s/%s", i, total)
             forwarded_emails.append({"message_id": message_ref["id"], "s3_paths": []})
+            if flag_label:
+                self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
+
             time.sleep(1)
+        return forwarded_emails
+
+    def forward_raw_emails(
+            self, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
+    ) -> List[dict]:
+        message_list = self.gmail.list_emails(self.message_query)
+        total = len(message_list.message_refs)
+        i = 0
+        forwarded_emails = []
+        for message_ref in message_list.message_refs:
+            message = self.gmail.get_email(message_ref, with_raw=True)
+            sender = message.sender
+            self.gmail.client.forward_raw_message(message, to=to, sender=sender)
+            i += 1
+            logger.info("%s", message_ref)
+            logger.info("forwarded raw: %s/%s", i, total)
+            forwarded_emails.append({"message_id": message_ref["id"], "s3_paths": []})
+            if flag_label:
+                self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
+            time.sleep(1)
+
         return forwarded_emails

@@ -33,20 +33,14 @@ class GmailForwardCmd(CommandBase):
         GCONFIG.load_conf(self.conf)
         self.s3conf = deepcopy(GCONFIG.s3)
         self.info = options.info
+        self.raw = options.raw
         self.to = options.to
-        self.sender = options.sender
         self.prefix = options.prefix
         self._result = None
+        self.set_label = options.set_label
 
     @classmethod
     def _add_arguments(cls, parser):
-        parser.add_argument(
-            "--sender",
-            required=True,
-            type=str,
-            help="Email used in the 'from' statement. Must match the gmail account auth",
-        )
-
         parser.add_argument(
             "--to", required=True, type=str, help="Address to forward emails to"
         )
@@ -118,12 +112,27 @@ class GmailForwardCmd(CommandBase):
         )
 
         parser.add_argument(
+            "--set-label",
+            required=False,
+            type=str,
+            help="Set a label on successfully forwarded emails",
+        )
+
+        parser.add_argument(
             "--info",
             "-i",
             required=False,
             default=False,
             action=argparse.BooleanOptionalAction,
             help="Returns only the number of emails matching the query",
+        )
+        parser.add_argument(
+            "--raw",
+            "-r",
+            required=False,
+            default=False,
+            action=argparse.BooleanOptionalAction,
+            help="Forward the raw email, only change the 'To'",
         )
 
     def _call(self):
@@ -133,9 +142,12 @@ class GmailForwardCmd(CommandBase):
         if self.info:
             self._result = gmailsyncer.sync_emails_info()
         else:
-            resp = gmailsyncer.forward_emails(
-                to=self.to, sender=self.sender, forward_prefix=self.prefix
-            )
+            if self.raw:
+                resp = gmailsyncer.forward_raw_emails(to=self.to, flag_label=self.set_label)
+            else:
+                resp = gmailsyncer.forward_emails(
+                    to=self.to, forward_prefix=self.prefix, flag_label=self.set_label
+                )
             self._result = {"total": len(resp), "forwarded_emails": resp}
 
     def _render_dict(self):
