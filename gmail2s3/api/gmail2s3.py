@@ -35,6 +35,11 @@ class S3Conf(BaseModel):
     prefix: str | None = Field(None)
 
 
+class S3Dest(BaseModel):
+    bucket: str = Field("...")
+    path: str = Field("...")
+
+
 class CopyS3Resp(BaseModel):
     source: S3Dest = Field("...")
     dest: S3Dest = Field("...")
