@@ -6,6 +6,7 @@ from enum import Enum
 from datetime import datetime, date
 from typing import Dict, List, Tuple, Any
 
+from fpdf import FPDF
 from pydantic import BaseModel, Field
 from simplegmail import Gmail
 from simplegmail.message import Message
@@ -164,7 +165,7 @@ class GmailClient:
         messages = self.client.get_messages(query=query, refs_only=True)
         return MessageList(message_refs=messages, query=message_query)
 
-    def get_email(self, message_ref: dict, with_raw: bool = False):
+    def get_email(self, message_ref: dict, with_raw: bool = True):
         message = self.client.get_message_from_ref(ref=message_ref, with_raw=with_raw)
         return message
 
@@ -184,12 +185,24 @@ class GmailClient:
             paths.append((str(fpath), attach))
         return paths
 
-    def dump_message(self, message: Message):
+    def dump_message(self, message: Message) -> List[PurePath]:
+        """
+        Save to disk the original JSON fron GMAIL
+        convert and store the email to txt and PDF too
+        """
         fpath = PurePath().joinpath(
-            self.dest_dir, self._message_storage_path(message), f"{message.id}.json"
+            self.dest_dir, self._message_storage_path(message), f"{message.id}"
         )
-        message.dump(str(fpath))
-        return fpath
+        message.dump(str(fpath) + ".json", as_string=False)
+        message.dump(str(fpath) + ".txt", as_string=True)
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size = 8)
+        m = message.as_string()
+        pdf.multi_cell(0, 5, m, align="L")
+        pdf.output(str(fpath) + ".pdf", 'F')
+        return [PurePath(str(fpath) + x) for x in [".json", ".pdf", ".txt"]]
 
     def add_labels(self, message: Message, labels: List[str]):
         return message.add_labels(labels)
@@ -253,12 +266,13 @@ class Gmail2S3:
                 attachments=[attach],
                 s3_dests=[s3_dest],
             )
-        raw_message_path = self.gmail.dump_message(message)
-        email_s3_path = self.s3.upload_file(
-            str(raw_message_path),
-            str(raw_message_path.relative_to(self.gmail.dest_dir)),
-        )
-        s3_dests.append(email_s3_path)
+        raw_message_paths = self.gmail.dump_message(message)
+        for raw_message_path in raw_message_paths:
+            email_s3_path = self.s3.upload_file(
+                str(raw_message_path),
+                str(raw_message_path.relative_to(self.gmail.dest_dir)),
+            )
+            s3_dests.append(email_s3_path)
         self.trigger_webhooks(
             WebHookType.SYNCED_EMAIL,
             message_ref,
@@ -288,7 +302,7 @@ class Gmail2S3:
             logger.info("synced: %s/%s", i, total)
             _, s3_dests = self.sync_email(message_ref, flag_label=flag_label)
             synced_emails.append(
-                {"message_id": message_ref["id"], "s3_paths": s3_dests}
+                {"message_id": message_ref["id"], "s3_paths": [x.dict() for x in s3_dests]}
             )
         return synced_emails
 
