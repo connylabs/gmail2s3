@@ -40,15 +40,20 @@ class S3Client:
         return S3Dest(bucket=self.bucket, path=path)
 
     def copy_s3_to_s3(
-        self, src_bucket: str, src_path: str, dest_bucket: str, dest_prefix: str = ""
+        self,
+        src_bucket: str,
+        src_path: str,
+        dest_bucket: str,
+        dest_prefix: str = "",
+        name_only: bool = False,
     ) -> Tuple[S3Dest, S3Dest]:
         copy_source = {
             "Bucket": src_bucket,
             "Key": src_path,
         }
 
-        if not dest_prefix:
-            dest_path = src_path
+        if not name_only:
+            dest_path = f"{dest_prefix}{src_path}"
         else:
             dest_path = f"{dest_prefix}{PurePath(src_path).name}"
 

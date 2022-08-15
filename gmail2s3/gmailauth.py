@@ -198,10 +198,10 @@ class GmailClient:
 
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", size = 8)
+        pdf.set_font("Arial", size=8)
         m = message.as_simple_string()
         pdf.multi_cell(0, 3, m, align="L")
-        pdf.output(str(fpath) + ".pdf", 'F')
+        pdf.output(str(fpath) + ".pdf", "F")
         return [PurePath(str(fpath) + x) for x in [".json", ".pdf", ".txt"]]
 
     def add_labels(self, message: Message, labels: List[str]):
@@ -302,7 +302,10 @@ class Gmail2S3:
             logger.info("synced: %s/%s", i, total)
             _, s3_dests = self.sync_email(message_ref, flag_label=flag_label)
             synced_emails.append(
-                {"message_id": message_ref["id"], "s3_paths": [x.dict() for x in s3_dests]}
+                {
+                    "message_id": message_ref["id"],
+                    "s3_paths": [x.dict() for x in s3_dests],
+                }
             )
         return synced_emails
 
@@ -324,13 +327,15 @@ class Gmail2S3:
             logger.info("forwarded: %s/%s", i, total)
             forwarded_emails.append({"message_id": message_ref["id"], "s3_paths": []})
             if flag_label:
-                self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
+                self.gmail.add_labels(
+                    message, [self.gmail.client.get_label_id(flag_label)]
+                )
 
             time.sleep(1)
         return forwarded_emails
 
     def forward_raw_emails(
-            self, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
+        self, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
     ) -> List[dict]:
         message_list = self.gmail.list_emails(self.message_query)
         total = len(message_list.message_refs)
@@ -345,7 +350,9 @@ class Gmail2S3:
             logger.info("forwarded raw: %s/%s", i, total)
             forwarded_emails.append({"message_id": message_ref["id"], "s3_paths": []})
             if flag_label:
-                self.gmail.add_labels(message, [self.gmail.client.get_label_id(flag_label)])
+                self.gmail.add_labels(
+                    message, [self.gmail.client.get_label_id(flag_label)]
+                )
             time.sleep(1)
 
         return forwarded_emails
