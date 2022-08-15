@@ -45,6 +45,11 @@ class CopyS3Resp(BaseModel):
     dest: S3Dest = Field("...")
 
 
+class CopyS3RespList(BaseModel):
+    count: int = Field(0)
+    result: List[S3Dest] = Field([])
+
+
 class SyncedEmailRequest(BaseModel):
     query: MessageQuery = Field(MessageQuery())
     webhooks: List[WebHook] = Field([])
@@ -75,18 +80,23 @@ async def sync_emails_info(req: SyncedEmailRequest) -> dict:
     return resp
 
 
-@router.post("/webhooks/upload_attachment/copy", response_model=CopyS3Resp)
-async def copy_s3(webhook: WebHookBody) -> CopyS3Resp:
+@router.post("/webhooks/upload_attachment/copy", response_model=CopyS3RespList)
+async def copy_s3(webhook: WebHookBody) -> CopyS3RespList:
+    res = CopyS3RespList()
     s3conf = deepcopy(GCONFIG.s3)
+    message_id = webhook.payload.message_ref["id"]
     s3_dest_bucket = webhook.params["s3_copy_dest"]["bucket"]
-    s3_dest_prefix = webhook.params["s3_copy_dest"]["prefix"]
-    s3_src = webhook.payload.s3_uploads[0]
+    s3_dest_prefix = f"{webhook.params['s3_copy_dest']['prefix']}/{message_id}/"
     s3_client = S3Client(s3conf, bucket=s3conf["bucket"])
-    resp = s3_client.copy_s3_to_s3(
-        src_bucket=s3_src["bucket"],
-        src_path=s3_src["path"],
-        dest_bucket=s3_dest_bucket,
-        dest_prefix=s3_dest_prefix,
-    )
-    logger.info(resp)
-    return CopyS3Resp(source=resp[0], dest=resp[1])
+    for s3_src in webhook.payload.s3_uploads:
+        resp = s3_client.copy_s3_to_s3(
+            src_bucket=s3_src["bucket"],
+            src_path=s3_src["path"],
+            dest_bucket=s3_dest_bucket,
+            dest_prefix=s3_dest_prefix,
+            name_only=True,
+        )
+        logger.info(resp)
+        res.result.append(CopyS3Resp(source=resp[0], dest=resp[1]))
+    res.count = len(res.result)
+    return res

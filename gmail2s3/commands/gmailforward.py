@@ -143,7 +143,9 @@ class GmailForwardCmd(CommandBase):
             self._result = gmailsyncer.sync_emails_info()
         else:
             if self.raw:
-                resp = gmailsyncer.forward_raw_emails(to=self.to, flag_label=self.set_label)
+                resp = gmailsyncer.forward_raw_emails(
+                    to=self.to, flag_label=self.set_label
+                )
             else:
                 resp = gmailsyncer.forward_emails(
                     to=self.to, forward_prefix=self.prefix, flag_label=self.set_label
