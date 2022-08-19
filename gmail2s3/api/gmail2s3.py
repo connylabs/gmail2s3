@@ -86,7 +86,7 @@ async def copy_s3(webhook: WebHookBody) -> CopyS3RespList:
     s3conf = deepcopy(GCONFIG.s3)
     message_id = webhook.payload.message_ref["id"]
     s3_dest_bucket = webhook.params["s3_copy_dest"]["bucket"]
-    s3_dest_prefix = f"{webhook.params['s3_copy_dest']['prefix']}/{message_id}/"
+    s3_dest_prefix = f"{webhook.params['s3_copy_dest']['prefix']}{message_id}/"
     s3_client = S3Client(s3conf, bucket=s3conf["bucket"])
     for s3_src in webhook.payload.s3_uploads:
         resp = s3_client.copy_s3_to_s3(
