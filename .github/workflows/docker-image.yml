@@ -1,0 +1,57 @@
+name: Test & Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -U
+        pip install -r requirements_dev.txt -U
+    - name: Lint
+      run: |
+        make check
+    - name: PyTest
+      run: |
+        make pytest
+      
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - id: commit
+      uses: pr-mpt/actions-commit-hash@v1    
+      
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: img.conny.dev
+        username: ${{ secrets.DOCKER_USER}}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Build and push main
+      if: github.ref == 'refs/heads/main'
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: img.conny.dev/connylabs/gmail2s3:${{ steps.commit.outputs.short }}, img.conny.dev/connylabs/gmail2s3:main, img.conny.dev/connylabs/gmail2s3:latest
+
+    - name: Build and push branches
+      if: github.ref != 'refs/heads/main'
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: img.conny.dev/connylabs/gmail2s3:${{ steps.commit.outputs.short }}
