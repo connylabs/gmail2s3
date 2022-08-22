@@ -10,7 +10,7 @@ from gmail2s3.gmailauth import (
 
 from gmail2s3.config import GCONFIG
 
-
+# pylint: disable=too-many-instance-attributes
 class GmailForwardCmd(CommandBase):
     name = "gmail-forward"
     help_message = "Forward emails to another email address"

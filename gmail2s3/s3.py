@@ -11,7 +11,8 @@ class S3Dest(BaseModel):
 
 
 class S3Client:
-    def _boto_args(self, options: dict):
+    @staticmethod
+    def _boto_args(options: dict):
         kwargs: dict = {}
         if options["endpoint"]:
             kwargs["endpoint_url"] = options["endpoint"]

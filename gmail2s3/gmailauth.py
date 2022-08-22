@@ -119,14 +119,16 @@ class GmailClient:
         self.dest_dir = dest_dir
         pathlib.Path(self.dest_dir).mkdir(parents=True, exist_ok=True)
 
-    def fetch_token(self):
+    @staticmethod
+    def fetch_token():
         """Get the token from an object storage"""
         raise NotImplementedError
 
     def gen_token(self):
         return self.auth()
 
-    def store_token(self):
+    @staticmethod
+    def store_token():
         """Upload the gmail_token to an object storage"""
         raise NotImplementedError
 
@@ -169,7 +171,8 @@ class GmailClient:
         message = self.client.get_message_from_ref(ref=message_ref, with_raw=with_raw)
         return message
 
-    def _message_storage_path(self, message: Message) -> str:
+    @staticmethod
+    def _message_storage_path(message: Message) -> str:
         return str(PurePath().joinpath(message.date.strftime("%Y/%m"), message.id))
 
     def download_attachments(self, message: Message, overwrite: bool = True):
@@ -204,7 +207,8 @@ class GmailClient:
         pdf.output(str(fpath) + ".pdf", "F")
         return [PurePath(str(fpath) + x) for x in [".json", ".pdf", ".txt"]]
 
-    def add_labels(self, message: Message, labels: List[str]):
+    @staticmethod
+    def add_labels(message: Message, labels: List[str]):
         return message.add_labels(labels)
 
 
@@ -334,9 +338,7 @@ class Gmail2S3:
             time.sleep(1)
         return forwarded_emails
 
-    def forward_raw_emails(
-        self, to: str, forward_prefix="[FWD][G2S3] ", flag_label: str = ""
-    ) -> List[dict]:
+    def forward_raw_emails(self, to: str, flag_label: str = "") -> List[dict]:
         message_list = self.gmail.list_emails(self.message_query)
         total = len(message_list.message_refs)
         i = 0

@@ -30,7 +30,8 @@ class VersionCmd(CommandBase):
             api_version = ".. Connection error"
         return api_version
 
-    def _cli_version(self):
+    @staticmethod
+    def _cli_version():
         return gmail2s3.__version__
 
     def _version(self):
