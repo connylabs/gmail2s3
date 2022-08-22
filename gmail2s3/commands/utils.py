@@ -18,7 +18,8 @@ class ServerHost(argparse.Action):
 
 
 class LoadVariables(argparse.Action):
-    def _parse_cmd(self, var):
+    @staticmethod
+    def _parse_cmd(var):
         res = {}
         try:
             return json.loads(var)
@@ -31,7 +32,8 @@ class LoadVariables(argparse.Action):
                 res[key] = value
         return res
 
-    def _load_from_file(self, filename, ext):
+    @staticmethod
+    def _load_from_file(filename, ext):
         with open(filename, "r", encoding="utf-8") as ofile:
             if ext in [".yml", ".yaml"]:
                 return yaml.load(ofile.read(), Loader=yaml.SafeLoader)

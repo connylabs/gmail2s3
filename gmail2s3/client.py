@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_SERVER = "http://localhost:8080"
 
 
-# @TODO: Auto generate from schema
 class Gmail2S3Client:
     def __init__(
         self,
@@ -34,7 +33,8 @@ class Gmail2S3Client:
     def _url(self, path: str) -> str:
         return self.endpoint.geturl() + path
 
-    def _configure_endpoint(self, endpoint):
+    @staticmethod
+    def _configure_endpoint(endpoint):
         return urlparse(endpoint)
 
     @property
