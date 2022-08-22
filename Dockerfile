@@ -6,13 +6,18 @@ RUN apt-get update
 RUN apt-get install -y openssl ca-certificates
 RUN apt-get install -y libffi-dev build-essential libssl-dev git rustc cargo
 RUN pip install pip -U
-COPY requirements.txt $workdir
+RUN pip install poetry -U
+# Install dependencies first
+COPY poetry.lock pyproject.toml $workdir
+RUN poetry install --no-root --no-dev
 
-RUN pip install -r requirements.txt -U
 RUN apt-get remove --purge -y libffi-dev build-essential libssl-dev git rustc cargo
 RUN rm -rf /root/.cargo
-RUN pip install flask -U
+
+# Copy source code as late as possible to take advantages about layer cache
 COPY . $workdir
+RUN poetry install --no-dev
+
 
 # Squash layers
 # FROM python:3.10-slim
