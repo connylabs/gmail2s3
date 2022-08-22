@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Test & Build
 
 on:
   push:
@@ -20,6 +20,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt -U
         pip install -r requirements_dev.txt -U
+    - name: Lint
+      run: |
+        make check
+    - name: PyTest
+      run: |
+        make pytest
+      
   build:
     runs-on: ubuntu-latest
     steps:
