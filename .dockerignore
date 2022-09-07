@@ -1,4 +1,7 @@
 *.json
+*.yaml
+*.yml
+*.xml
 .json
 localconfig.yaml
 .python-version

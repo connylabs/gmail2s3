@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gmail2s3"
-version = "0.1.0"
+version = "0.3.0"
 description = ""
 authors = ["ant31 <2t.antoine@gmail.com>"]
 
@@ -25,6 +25,7 @@ google-auth-oauthlib = "^0.5.2"
 boto3 = "^1.24.56"
 simplegmail = {git = "https://github.com/ant31/simplegmail.git", rev = "main"}
 Flask = "^2.2.2"
+pdfkit = "^1.0.0"
 
 
 [tool.poetry.dev-dependencies]
