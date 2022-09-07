@@ -4,9 +4,10 @@ RUN mkdir -p $workdir
 WORKDIR $workdir
 RUN apt-get update
 RUN apt-get install -y openssl ca-certificates
-RUN apt-get install -y libffi-dev build-essential libssl-dev git rustc cargo
+RUN apt-get install -y libffi-dev build-essential libssl-dev git rustc cargo xvfb wkhtmltopdf
 RUN pip install pip -U
 RUN pip install poetry -U
+RUN ln -s $workdir/wkhtmltopdf.sh /bin/wkhtmltopdf
 # Install dependencies first
 COPY poetry.lock pyproject.toml $workdir
 RUN poetry install --no-root --no-dev

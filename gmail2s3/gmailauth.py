@@ -6,7 +6,7 @@ from enum import Enum
 from datetime import datetime, date
 from typing import Dict, List, Tuple, Any
 
-from fpdf import FPDF
+import pdfkit
 from pydantic import BaseModel, Field
 from simplegmail import Gmail
 from simplegmail.message import Message
@@ -198,13 +198,10 @@ class GmailClient:
         )
         message.dump(str(fpath) + ".json", as_string=False)
         message.dump(str(fpath) + ".txt", as_string=True)
-
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=8)
         m = message.as_simple_string()
-        pdf.multi_cell(0, 3, m, align="L")
-        pdf.output(str(fpath) + ".pdf", "F")
+        html = f'<html><header><meta charset="utf-8"/></header><body><div>{m}</div></body></html>'
+        html = html.replace("\n", "<br />\n")
+        pdfkit.from_string(html, str(fpath) + ".pdf")
         return [PurePath(str(fpath) + x) for x in [".json", ".pdf", ".txt"]]
 
     @staticmethod
