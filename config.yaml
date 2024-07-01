@@ -1,13 +1,13 @@
 gmail2s3:
-  token: changeme
+  token: gtoken.json
   debug: false
   download_dir: /tmp/gmail2s3
   env: development
   url: https://gmail2s3.yourdomain.com
 
 gmail:
-  client_secret: None
-  gmail_token: None
+  client_secret: client_secret.json
+  gmail_token: gtoken-mapp.json
 
 s3:
   endpoint: null

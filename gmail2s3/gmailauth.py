@@ -113,6 +113,11 @@ class GmailClient:
         gmail_token=GCONFIG.gmail["gmail_token"],
         dest_dir=GCONFIG.gmail2s3["download_dir"],
     ):
+        if not client_secret:
+            client_secret = GCONFIG.gmail["client_secret"]
+        if not gmail_token: 
+            gmail_token = GCONFIG.gmail["gmail_token"]
+
         self.client_secret = client_secret
         self.gmail_token = gmail_token
         self._client = None
@@ -133,7 +138,7 @@ class GmailClient:
         raise NotImplementedError
 
     def auth(self):
-        logger.info("%s, %s", self.client_secret, self.gmail_token)
+        logger.info("auth: %s, %s", self.client_secret, self.gmail_token)
         return Gmail(client_secret_file=self.client_secret, creds_file=self.gmail_token)
 
     @property
